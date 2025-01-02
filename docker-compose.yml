@@ -1,0 +1,49 @@
+networks:
+  dev:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres
+    container_name: postgres-container
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dev
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dotnet-app
+    ports:
+      - "8080:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dev
+    environment:
+      ASPNETCORE_URLS: http://+:80
+      CORS_ALLOWED_ORIGINS: http://frontend:80
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=mydb;Username=myuser;Password=mypassword;"
+
+  react:
+    build:
+      context: ./frontend  # Path to your React app
+      dockerfile: Dockerfile  # This is the Dockerfile inside the frontend directory
+    ports:
+      - "80:80"  # Expose React app on port 80
+    environment:
+      - REACT_APP_API_URL=http://api:8080  # Connect to the API service by name
+    depends_on:
+      - api

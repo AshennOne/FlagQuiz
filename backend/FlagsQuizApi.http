@@ -1,0 +1,6 @@
+@FlagsQuizApi_HostAddress = http://localhost:5141
+
+GET {{FlagsQuizApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
